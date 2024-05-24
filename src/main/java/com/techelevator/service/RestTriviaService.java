@@ -3,10 +3,13 @@ package com.techelevator.service;
 import com.techelevator.model.TriviaApi;
 import com.techelevator.service.model.TriviaCategories;
 import com.techelevator.service.model.TriviaCategory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.*;
 
@@ -21,11 +24,23 @@ public class RestTriviaService {
 
     private Integer numberOfQuestions, category;
     private String difficulty, type;
-    private RestTemplate restTemplate;
+    private WebClient webClientCategory;
+    private WebClient webClientApi;
     private TriviaCategories categories;
 
     public RestTriviaService(){
-        this.restTemplate = new RestTemplate();
+        this.webClientCategory = WebClient
+                .builder()
+                .baseUrl(CATEGORY_URL)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+
+        this.webClientApi = WebClient
+                .builder()
+                .baseUrl(API_URL)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+
         this.categories = this.getCategories();
     }
 
@@ -52,18 +67,13 @@ public class RestTriviaService {
                 "&difficulty=" + this.difficulty +
                 "&type=" + this.type;
 
-        TriviaApi triviaData = restTemplate.getForObject(url, TriviaApi.class);
 
-        return triviaData;
+        return null;
     }
 
     public List<String> getCategoryNames(){
 
         List<String> categoryNames = new ArrayList<>();
-
-        for(TriviaCategory eachCategory : categories.getCategories() ){
-            categoryNames.add(eachCategory.getName());
-        }
 
         return categoryNames;
     }
@@ -72,27 +82,10 @@ public class RestTriviaService {
 
         TriviaCategories categories = null;
 
-        try {
-            categories = restTemplate.getForObject(CATEGORY_URL, TriviaCategories.class);
-        }
-        catch(RestClientResponseException e){
-            System.out.println(e.getRawStatusCode() + ": " + e.getStatusText());
-            e.printStackTrace();
-        } catch(ResourceAccessException e){
-            System.out.println("ERROR: unable to connect to API.");
-            e.printStackTrace();
-        }
-
         return categories;
     }
 
     private Integer getCategoryIdByName(String category){
-
-        for(TriviaCategory eachCategory : this.categories.getCategories()){
-            if(eachCategory.getName().equalsIgnoreCase(category)){
-                return eachCategory.getId();
-            }
-        }
 
         return null;
     }
